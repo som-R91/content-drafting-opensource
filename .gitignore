@@ -1,0 +1,13 @@
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Obsidian vault config (personal tooling, not content)
+.obsidian/
+
+#Temporary / scratch files
+*.tmp
+*.bak
+*.swp
+*~

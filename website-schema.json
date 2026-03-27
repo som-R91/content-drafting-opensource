@@ -1,0 +1,12 @@
+{
+  "title": "string — specific, outcome-oriented headline (e.g. 'How I Reduced Churn 18% Using Behavioral Cohort Segmentation')",
+  "subtitle": "string — specific, outcome-oriented subtitle for this article. It should align with the headline or the takeaway.",
+  "seoTitle": "string — rewritten for search intent; include 1–2 primary keywords naturally. Best Practice: Keep under 50-60 characters, place the primary keyword at the beginning, and include the brand name.",
+  "seoDescription": "string — The snippet of text below the title tag in SERPs that summarizes the page's content. Best Practice: Aim for 150-160 characters. It should be compelling to encourage clicks (acting as a sales pitch) and include keywords, which are often bolded by search engines.",
+  "seoKeywords": "array of strings — 8–10 tags ordered most to least relevant; lowercase; hyphens for multi-word terms; real practitioner vocabulary only (for SEO)",
+  "category": "string — exactly one value from the Active Categories list in categories.md; must match character-for-character",
+  "tags": "array of strings — 8–10 tags ordered most to least relevant; lowercase; hyphens for multi-word terms; real practitioner vocabulary only",
+  "timeToRead": "integer — body word count ÷ 200, rounded to nearest minute",
+  "mainImagePromptToGenerateImageUsingAI": "string — detailed AI image generation prompt including subject matter, mood, colour palette, composition, and visual style as the final sentence",
+  "mainImageCaption": "string — A short 1-line phrase or sentence to be used as a caption for the main image of this article and aligns with the content of this article."
+}

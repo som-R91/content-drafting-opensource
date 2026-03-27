@@ -1,212 +1,243 @@
-# AI-Powered Personal Branding Content Workspace
+# Personal Branding Content Workspace — Operator Guide
 
-A fully automated, multi-agent content production pipeline for professionals building a personal brand. Given a topic or angle, this workspace orchestrates Claude Code and Gemini CLI to produce a long-form article, a LinkedIn feed post, a Twitter/X thread, a CMS portfolio piece, and optionally a LinkedIn carousel PDF and a Twitter image thread — all in a single coordinated pipeline with strategic checkpoints for your input.
+This document is your personal reference for operating, maintaining, and updating this workspace. It assumes you are already familiar with the project's purpose. If you are returning after a gap and need a refresher on the strategic context, read `AI-CONTEXT.md` first.
 
 ---
 
 ## What This Is
 
-Most personal branding workflows are fragmented: you research in one tool, draft in another, rewrite in a third, and manually copy content between platforms. This workspace replaces that fragmentation with a single orchestrated pipeline. You provide the topic. The pipeline handles the research, drafting, formatting, and file organisation — pausing at the decisions that require your judgment and automating everything else.
+This workspace is an opinionated content pipeline for building a personal brand through high-signal, practitioner-level writing. It is designed for professionals who want to create consistent, well-researched content without the overhead of managing a disconnected set of tools and prompts.
 
-The pipeline is built on a deliberate division of labour between two AI tools. Gemini CLI handles deep factual research, surfacing data points, named frameworks, case studies, and contrarian angles. Claude Code takes that raw research and transforms it into finished, persona-consistent content across all formats. Research is preserved in a dedicated folder so sequel articles can be written in future sessions without re-running Gemini.
+The system has three core principles:
 
----
+1. **Research is preserved.** Gemini Deep Research output is saved inside each article folder. Sequel articles reuse the same research — no redundant Gemini calls.
 
-## Prerequisites
+2. **One command, all formats.** A single `/draft-content` command produces a long-form article, LinkedIn post, Twitter thread, and website files in one pass. Standalone commands exist for when you need only one format.
 
-Before setting up this workspace, you need the following tools installed and authenticated. Both AI tools must be installed and initialised in your workspace before the pipeline will work — the research step relies on Claude Code invoking Gemini CLI as a subprocess, which will fail silently or prompt for permissions at the worst possible moment if Gemini has never been opened in this directory before.
+3. **Strategy is version-controlled.** Your content pillars, categories, and positioning live in files that the AI reads on every session. Changing your strategy means editing a file — not re-briefing the AI each time.
 
-**Claude Code** is Anthropic's agentic coding and writing assistant that runs in your terminal. It requires Node.js 18 or later. Install it globally via npm:
-
-```bash
-npm install -g @anthropic-ai/claude-code
-```
-
-You will need an Anthropic account. On first run, Claude Code will open a browser window to complete authentication. Full installation documentation is at https://docs.claude.ai/code.
-
-**Gemini CLI** is Google's command-line interface for Gemini models. Install it globally via npm:
-
-```bash
-npm install -g @google/gemini-cli
-```
-
-You will need a Google account with Gemini API access. On first run, Gemini CLI will prompt you to authenticate via browser and will ask for permission to access your local filesystem. Full installation documentation is at https://github.com/google-gemini/gemini-cli.
-
-**Python 3** is required for carousel PDF rendering. It is likely already installed on your system. Verify with `python3 --version`. The `reportlab` library is used for PDF generation and will be installed automatically by the carousel command if not already present.
-
-A **CMS account** is required if you want to use the website portfolio JSON feature. The default configuration targets Sanity CMS, but the schema section in `AI-CONTEXT.md` can be updated to match any CMS or custom JSON structure. If you do not use a CMS, you can skip `/draft-website-json` entirely and use only the article, LinkedIn, and Twitter outputs.
+The pipeline uses Claude Code as the orchestrator and author, and Gemini App's Deep Research mode as the research tool. Neither tool tries to do the other's job.
 
 ---
 
-## Getting Started
+## What This Workspace Does
 
-This section walks you through everything you need to do before running your first content session. The whole setup should take about 20–30 minutes.
+This workspace produces the full content pipeline for your personal brand as a Data-Driven Senior PM and Ex-Founder. Given a topic or angle, it produces a long-form article, a LinkedIn feed post, a Twitter thread, Sanity CMS website post files, and optionally a LinkedIn carousel and Twitter image thread.
 
-### Step 1 — Clone this repository
+The pipeline has a deliberate manual break in the middle. Claude generates structured research prompts, you run them in Gemini App's Deep Research mode, then Claude takes the research and produces all the content. Research is preserved inside the article folder so sequel articles don't require re-running Gemini.
 
-Clone or download this repository into a local directory that will serve as your workspace root. All commands in this workspace assume they are run from this root directory.
+---
 
-```bash
-git clone https://github.com/[repo-url] my-content-workspace
-cd my-content-workspace
-```
+## Prerequisites — Get These Ready
 
-### Step 2 — Personalise AI-CONTEXT.md (the most important step)
+Before running `/onboard`, have the following available:
 
-Open `AI-CONTEXT.md` and fill in every section marked with a bracketed placeholder like `[YOUR NAME]` or `[YOUR POSITIONING STATEMENT]`. This file is the shared brain for both Claude Code and Gemini CLI — everything they produce will be shaped by what you write here. There are three sections that matter most.
+- **Claude Code** installed and running (see [claude.ai](https://claude.ai))
+- **Gemini App** with access to Deep Research mode (for the research step)
+- **Your resume or CV** — even a rough draft; used to extract career history during onboarding
+- **Your LinkedIn About section** — if you have one
+- **A list of your most significant projects** — including side projects or ventures that didn't ship, with outcomes and metrics where you have them
+- **Your current or most recent job title and employer**
+- **Your target role or goal** — what you're trying to attract (a job, clients, an audience)
+- **Sanity CMS project** *(optional)* — only needed if you want to use the website post output feature
 
-**Workspace Identity** is where you define your positioning statement and your target audience. Be specific. "Senior Software Engineer" is too vague. "Infrastructure Engineer & Open-Source Contributor targeting Staff Engineer roles at developer-tools companies" gives the AI a concrete character to write as.
+You do not need to prepare any files before running `/onboard`. The command collects everything through a structured interview.
 
-**The Rule of Three Content Pillars** is where you define the three topic areas your content will orbit. Each pillar should describe a cluster of related topics and name the capability that publishing in it demonstrates to your target audience. Think of each pillar as an answer to the question: "What should a recruiter or hiring manager conclude about me after reading five of my posts on this topic?"
+---
 
-**Persona & Tone** is where you describe how you want to sound. Write this as if you are briefing a ghostwriter. What would a senior practitioner in your field say that a junior person would not? What phrases or habits should be avoided? What experiences from your career should the AI reference when it strengthens a point?
+## Getting Started — Onboarding
 
-### Step 3 — Review CLAUDE.md and GEMINI.md
-
-In most cases you do not need to change these files — they contain role-specific wiring for each AI tool and default to sensible behaviour. Skim them to understand what each AI is being asked to do. The only section you might want to customise early on is the **CMS Schema** section in `CLAUDE.md`, if you are using a CMS other than Sanity.
-
-### Step 4 — Verify your directory structure
-
-The following directories must exist before you run any command. They ship with the repository as empty folders (tracked via `.gitkeep` files):
+**Step 1 — Clone or download this repository.**
 
 ```
-career/linkedin/
-career/medium/
-career/twitter/
-career/website/
-career/research/
+git clone <repo-url>
+cd content-writing
 ```
 
-The `career/research/` folder is particularly important. The pipeline saves all Gemini research outputs here after every research call, and these files accumulate into a research library that powers future sessions — a sequel article written three months from now can draw from research that was already run for a previous piece.
+**Step 2 — Open the folder in Claude Code.**
 
-### Step 5 — Configure your CMS schema (if using the website feature)
-
-If you are using the `/draft-website-json` command, place a sample JSON file in `career/website/` that matches your CMS schema exactly. The command reads an existing file before generating a new one to ensure it follows the same structure. If you are using Sanity with the default configuration, the schema is already defined in `AI-CONTEXT.md` and no additional setup is needed.
-
-### Step 6 — Initialise both AI tools in the workspace (do this before your first content run)
-
-This step is easy to skip and important not to. Both Claude Code and Gemini CLI use a workspace trust model: they only get access to the files in a directory after being explicitly opened there for the first time. If Gemini CLI has never been opened in this directory, Claude Code's subprocess calls to it during the research step will either fail silently or surface an interactive permission prompt in a context where you cannot respond to it. The fix is simple — you just need to open each tool in the workspace once, complete any prompts they present, then close them. After that, all future sessions work without interruption.
-
-**Terminal 1 — Initialise Claude Code:**
-
-Open a terminal, navigate to your workspace root, and start Claude Code:
-
-```bash
-cd path/to/my-content-workspace
+```
 claude
 ```
 
-Claude Code will read `CLAUDE.md` automatically, which instructs it to read `AI-CONTEXT.md`. It may ask you to confirm it can access the workspace directory — confirm this. Once it loads and you see the prompt, you can type `exit` to close it. The workspace is now registered.
+**Step 3 — Run `/onboard`.**
 
-**Terminal 2 — Initialise Gemini CLI:**
+This is the only command you need to run on a fresh workspace. It will:
 
-Open a second terminal, navigate to the same workspace root, and start Gemini:
+- Ask you to have your resume and project list ready
+- Run a structured interview covering your career history, key projects, and content goals
+- Derive two content pillars from your career narrative (with your approval before writing anything)
+- Generate starter categories for your content registry
+- Populate `AI-CONTEXT.md`, `pillars.md`, `categories.md`, and `CLAUDE.md` with your specific context
+- Create your memory files so Claude maintains context across sessions
 
-```bash
-cd path/to/my-content-workspace
-gemini
-```
+The whole process takes 20–30 minutes depending on how much career history you share.
 
-Gemini CLI will prompt you to authenticate via browser on first run and will ask for permission to read and write files in the current directory — grant this. It may also ask you to confirm which Google account to use if you have more than one. Once you see the Gemini prompt, type `exit` or press `Ctrl+C` to close it. The workspace is now registered for Gemini as well.
+**Step 4 — Review the generated files.**
 
-You only need to do this initialisation once per workspace. After both tools have been opened here at least once, you can run all subsequent sessions from Claude Code alone — Gemini will be invoked as a background subprocess without any further prompts.
+After onboarding, open `AI-CONTEXT.md` and `pillars.md` and confirm they accurately reflect your positioning and the two content pillars Claude derived. These files drive every draft command — it's worth reading them once before you start publishing.
 
-**Running your first content session:**
-
-Open Claude Code in the workspace root:
-
-```bash
-claude
-```
-
-Then run the master pipeline command with a topic of your choice:
+**Step 5 — Start your first article.**
 
 ```
-/draft-master your topic or angle here
+/draft-research your-first-topic
 ```
 
-The pipeline will walk you through a series of checkpoints — category assignment, tag review, length selection, outline approval, and visual style choice — pausing at each one to collect your input before proceeding. You do not need to memorise the sequence; Claude Code will guide you through it.
+---
 
-### Step 7 — Iterate and build your content library
+## The Two-Phase Workflow
 
-Each time you run `/draft-master`, the research output is saved to `career/research/`. When you run `/draft-calendar` to plan the next four weeks of content, Claude Code reads these research files and surfaces sequel opportunities — topics that already have research done and can be written without another Gemini call. Over time, your research library compounds: each article you publish seeds material for two or three future articles.
+**Phase 1 — Research**
+
+Run `/draft-research <topic>` in Claude Code. Claude will:
+1. Read `INDEX.md` to assign the next NNN number to the article
+2. Classify the topic into a content pillar (reading `pillars.md`)
+3. Confirm a category (checkpoint)
+4. Generate two research prompts and save them to `career/articles/NNN-SLUG/1-research/prompts.md`
+5. Create the article folder at `career/articles/NNN-SLUG/` with `meta.md`
+6. Add the new row to `INDEX.md` with status "Folder Created"
+7. Output a handoff block telling you exactly what to do in Gemini
+
+You then take Prompt 1 into Gemini App → Deep Research mode, save the output as `career/articles/NNN-SLUG/1-research/research-raw.md`, run Prompt 2 in a new Gemini conversation with the raw output pasted at the end, and save that output as `career/articles/NNN-SLUG/1-research/research.md`.
+
+**Phase 2 — Content**
+
+Run `/draft-content <slug>` in Claude Code (bare SLUG, case-insensitive — e.g., `monetask-18-months-never-shipped`). Claude will resolve it to the `NNN-SLUG` folder via `INDEX.md`, read `1-research/research.md`, and produce:
+- Long-form article (`3-medium/medium.md`)
+- LinkedIn feed post (`4-linkedin/post.md`)
+- Twitter/X thread (`5-twitter/thread.md`)
+- Website post files (`2-website/post-meta.md` + `2-website/post-body.md`)
+- Optionally: LinkedIn carousel and Twitter image thread
+
+At the end, Claude outputs a publishing checklist, updates `INDEX.md` status to "Content Drafted", writes the title back to `meta.md`, and appends sequel seeds to `sequel-seeds.md`.
 
 ---
 
-## How It Works
+## File and Folder Reference
 
-The pipeline is driven by eight slash commands that run inside Claude Code. Each command is defined as a Markdown file in `.claude/commands/` — Claude Code reads these files to know exactly how to execute each task, including which research to run, which checkpoints to pause at, and which files to create.
+**`AI-CONTEXT.md`** is the single source of truth for all strategic and structural knowledge. Both Claude Code and Gemini App are instructed to read this file at the start of every session. Update it when you want to change the content strategy, funnel architecture, tag ordering logic, or any convention that applies to both AIs.
 
-When you run `/draft-master <topic>`, the following sequence happens automatically, with pauses at the points marked as checkpoints.
+**`pillars.md`** contains the canonical 2-pillar definitions used by all slash commands. Update this file (not AI-CONTEXT.md) when the content strategy changes — all commands automatically use the updated definitions in the next session.
 
-Claude Code classifies your topic into one of your three content pillars and proposes a category from your approved categories list. It pauses and asks you to confirm the category before proceeding — this is a checkpoint because the category affects the website filter UI and must be deliberate.
+**`website-schema.json`** defines the Sanity CMS field schema. Update this file when the Sanity schema changes — commands read it directly rather than inspecting existing article files.
 
-Claude Code calls Gemini CLI via a bash subprocess with a structured research prompt. Gemini returns research in labelled sections (LANDSCAPE, DATA, FRAMEWORKS, CASE STUDIES, CONTRARIAN ANGLE, PRACTITIONER MISTAKES, and others). Claude Code saves this output to `career/research/YYYY-MM-DD_topic-slug-research.md` immediately. This file is the durable research record — all subsequent commands for the same topic draw from it rather than calling Gemini again.
+**`CLAUDE.md`** contains Claude Code's role-specific instructions. Update it only when changing something specific to how Claude behaves.
 
-Claude Code generates an ordered tag list from the research and shows it to you for review. This is a checkpoint because tag ordering affects SEO and platform discoverability — earlier tags carry more weight.
+**`GEMINI.md`** contains Gemini's role-specific instructions. Update it when changing how Gemini should structure its research output.
 
-Claude Code assesses how much material the research contains relative to the target article length and presents three options: a standard 1,200–1,800 word article, a longer 2,000–2,500 word deep-dive, or a Part 1 now with a Part 2 planned for later. You choose. This is a checkpoint because article length affects which material gets included versus saved for sequels.
+**`categories.md`** is the living registry of all approved content categories. Never manually add a category to a content file that isn't in this registry — let Claude propose it at the checkpoint.
 
-Claude Code builds the article outline following a structured template (opening hook, problem framing, named framework, real-world application, common mistakes, CTA) and shows it to you for approval. You can approve or request changes before any prose is written. This checkpoint can be skipped by adding "full draft" to your command.
+**`README.md`** is this file. It is not read by the AI tools.
 
-With the outline approved, Claude Code writes the full article in Markdown, saving it to `career/medium/YYYY-MM-DD_topic-slug.md`. It then shows you the article and asks for any edits before generating the short-form content. This is a checkpoint because the LinkedIn post and Twitter thread are derived from the article — editing the article first prevents rework downstream.
+**`career/articles/INDEX.md`** is the article tracker table. It lists every article with its index number, slug, title, pillar, category, dates, and status. Claude Code reads this file to determine the next index number when creating a new article folder and updates it at the start and end of each pipeline run.
 
-Claude Code generates the image generation prompt for the article cover, shows it to you, and asks which visual style you want: lifelike, photo-realistic, illustration, or Ghibli. This is a checkpoint because the style choice is a creative decision.
+**`career/articles/sequel-seeds.md`** is the lightweight sequel opportunity index. It is updated by `/draft-content` after each article is drafted. `/draft-calendar` reads this file to surface sequel ideas without opening individual research files.
 
-Claude Code asks whether you also want a LinkedIn carousel and/or a Twitter image thread for this topic. If you confirm either, they are generated as additional pipeline steps using the same saved research.
+**`career/articles/NNN-SLUG/`** is where all files for a given article live. Each article has its own folder named with a 3-digit index prefix and SLUG. Inside:
 
-Claude Code generates the LinkedIn feed post, the Twitter thread, and the CMS JSON, saving each to the correct folder with the matching date-slug prefix. It then outputs a publishing checklist with all file paths and a recommended publishing order.
+- `meta.md` — slug, title, created date, intended publish date, published date, pillar, category, tags, flags
+- `1-research/prompts.md` — the two Gemini research prompts generated by `/draft-research`
+- `1-research/research-raw.md` — raw Gemini Deep Research output (**read-restricted**: Claude will not open this without your explicit instruction)
+- `1-research/research.md` — structured, summarised research + Research Utilisation Summary + Decisions Log
+- `2-website/post-meta.md` — Sanity CMS metadata (title, seoTitle, category, tags, timeToRead, image prompt)
+- `2-website/post-body.md` — full article Markdown body (same content as `medium.md` at time of generation)
+- `3-medium/medium.md` — long-form article draft for Medium and LinkedIn Newsletter
+- `4-linkedin/post.md` — LinkedIn feed post
+- `4-linkedin/carousel-script.md` — carousel slide script (if produced)
+- `4-linkedin/carousel-post.md` — accompanying carousel LinkedIn post (if produced)
+- `5-twitter/thread.md` — Twitter/X thread
+- `5-twitter/imagethread-script.md` — image thread script (if produced)
+- `5-twitter/image-prompts.md` — AI image generation prompts (if produced)
 
----
+**`career/research/`** contains standalone research documents not tied to a specific article. Leave this folder as is.
 
-## The Eight Slash Commands
-
-All commands are run in the Claude Code terminal.
-
-**`/draft-master <topic>`** runs the full pipeline. This is the command you will use most often. Add "full draft" to skip the outline approval checkpoint. Add "carousel" or "imagethread" to pre-confirm those optional outputs.
-
-**`/draft-calendar`** generates or updates a rolling 4-week content calendar. It reads your existing research files to surface sequel opportunities that can be written without new research.
-
-**`/draft-medium <topic>`** generates the long-form article as a standalone task, without producing the other formats.
-
-**`/draft-linkedin <topic>`** generates the LinkedIn feed post only, reusing any existing research or article draft for the same topic.
-
-**`/draft-twitter <topic>`** generates the Twitter/X thread only, reusing existing research where available.
-
-**`/draft-website-json <topic>`** generates the CMS JSON portfolio piece, running a schema check against your existing files before generating.
-
-**`/draft-carousel <topic>`** generates the LinkedIn carousel: a slide script, a rendered PDF, and the accompanying post text.
-
-**`/draft-imagethread <topic>`** generates the Twitter image thread: tweet captions and AI image generation prompts for each card.
+**`.claude/commands/`** contains the nine slash command definition files.
 
 ---
 
-## Updating and Maintaining the Workspace
+## The Nine Slash Commands
 
-The maintenance model is designed around a single source of truth. When you want to update anything strategic — your positioning, your content pillars, your tone, the funnel architecture, any convention — edit only `AI-CONTEXT.md`. Both Claude Code and Gemini CLI read this file at the start of every session automatically, so your changes take effect immediately in the next session without any sync command.
+**`/draft-research <topic>`** — Phase 1 of the pipeline. Assigns next index number, classifies the topic, confirms the category, generates research prompts inside the new article folder, outputs the Gemini handoff block.
 
-When you want to add a new slash command, create a new Markdown file in `.claude/commands/` following the structure of the existing commands, then add a one-line description of it to the Slash Commands section of `CLAUDE.md`.
+**`/draft-content <slug>`** — Phase 2 of the pipeline. Takes a bare SLUG (case-insensitive). Requires `1-research/research.md` to exist. Produces all content formats, updates INDEX.md, meta.md, and sequel-seeds.md on completion. Append "full draft" to skip the outline checkpoint. Append "carousel" and/or "imagethread" to pre-confirm those optional outputs.
 
-When you want to change how Claude Code specifically behaves — for example, changing the checkpoint protocol or the publishing order — edit `CLAUDE.md` only.
+**`/draft-calendar`** — Generates or updates your rolling 4-week content calendar. Reads `INDEX.md` and `sequel-seeds.md` only (efficient — no research files opened). Respects `calendarAI` setting in `AI-CONTEXT.md`.
 
-When you want to change how Gemini CLI specifically behaves — for example, changing the expected research output format — edit `GEMINI.md` only, and also update the corresponding `gemini -p "..."` prompt inside the relevant command file in `.claude/commands/`.
+**`/draft-medium <slug>`** — Standalone long-form article only. Includes pre-validation check, content volume assessment, and Research Utilisation Summary.
 
----
+**`/draft-linkedin <slug>`** — Standalone LinkedIn feed post only. Reuses any existing `research.md` or `medium.md` for the same topic rather than running new research.
 
-## File Naming Convention
+**`/draft-twitter <slug>`** — Standalone Twitter/X thread only. Same reuse behaviour.
 
-Every file produced by this workspace uses a date-prefixed slug format: `YYYY-MM-DD_kebab-case-topic-slug`. For example, an article about north star metrics written on March 15, 2026 would be saved as `2026-03-15_north-star-metric-b2b-saas.md` in `career/medium/`, `2026-03-15_north-star-metric-b2b-saas-post.md` in `career/linkedin/`, `2026-03-15_north-star-metric-b2b-saas-thread.md` in `career/twitter/`, and `2026-03-15_north-star-metric-b2b-saas.json` in `career/website/`. The shared prefix makes it immediately obvious which files belong to the same publishing batch, regardless of which folder they are in.
+**`/draft-website <slug>`** — Standalone website post generator. Reads `website-schema.json` for the canonical field list. Produces `2-website/post-meta.md` and `2-website/post-body.md`.
 
----
+**`/draft-carousel <slug>`** — Standalone LinkedIn carousel. Produces the slide script, attempts to render a PDF via Python, and produces the accompanying post text. If PDF rendering fails, the slide script is saved ready for manual import into Canva.
 
-## Contributing
-
-This workspace is designed to be extended. New slash commands can be added by creating a Markdown file in `.claude/commands/` — the file is its own documentation and the structure of the existing commands serves as the template. If you build a command that others might find useful (for example, a command that generates YouTube scripts or podcast episode outlines from the same research), contributions are welcome via pull request.
-
-When contributing, please follow the existing conventions: date-slug filenames, research preservation in `career/research/`, checkpoint pauses for decisions that require human judgment, and the single source of truth principle for `AI-CONTEXT.md`.
+**`/draft-imagethread <slug>`** — Standalone Twitter image thread. Produces tweet captions and AI image generation prompts. Images are generated externally using those prompts.
 
 ---
 
-## Licence
+## How to Run the Typical Publishing Workflow
 
-MIT. See LICENCE file for details.
+1. Open Claude Code in this workspace.
+2. Run `/draft-research <your topic or angle>` and follow the prompts.
+3. Complete the Gemini steps from the handoff block (Deep Research, then Summarization).
+4. Save the outputs to `career/articles/NNN-SLUG/1-research/research-raw.md` and `research.md`.
+5. Run `/draft-content <slug>`. Respond to the checkpoints (tags, article length, outline, visual style, optional formats).
+6. Follow the publishing checklist Claude outputs at the end: website first, then Medium, then LinkedIn Newsletter, then LinkedIn feed post, then carousel if produced, then Twitter thread, then image thread if produced.
+
+---
+
+## How to Upload to Sanity CMS
+
+After `/draft-content` or `/draft-website` runs, assemble the website post JSON manually:
+1. Open `2-website/post-meta.md` — copy all frontmatter fields into a JSON object
+2. Open `2-website/post-body.md` — use its contents as the `body` field
+3. Validate the assembled JSON against `website-schema.json`
+4. Rename to `[created date from meta.md]_SLUG.json` before uploading
+
+---
+
+## How to Update AI-CONTEXT.md
+
+Edit directly in your text editor. Changes take effect the next time you open a new Claude Code session — there is no sync command to run.
+
+---
+
+## How to Update the Content Strategy (Pillars)
+
+Edit `pillars.md` directly. All slash commands read this file at the start of every pillar classification step, so changes take effect immediately in the next session. Also update the human-readable description in `AI-CONTEXT.md` for reference.
+
+---
+
+## How to Update the Sanity CMS Schema
+
+Edit `website-schema.json` directly. Add, remove, or rename fields as needed. Commands read this file rather than inspecting existing articles, so all future website posts will automatically conform.
+
+---
+
+## How to Add a New Slash Command
+
+Create a new `.md` file in `.claude/commands/` following the naming pattern `draft-<commandname>.md`. Write the steps inside using the same structure as the existing commands. Add the new command to the Slash Commands section of `CLAUDE.md` with a one-line description. Update `AI-CONTEXT.md` only if the new command introduces a structural convention that applies workspace-wide.
+
+---
+
+## How to Add a New Content Category
+
+Do not add categories manually. Run any draft command for a piece that requires a new category, and Claude will propose one and pause for your approval before adding it to `categories.md`. This ensures the category is always logged with the correct date and article association.
+
+---
+
+## Troubleshooting
+
+**Claude ignores the persona or tone:** Most likely it did not read `AI-CONTEXT.md` at session start. Open a new session and ask: "Please read AI-CONTEXT.md and confirm you understand the workspace."
+
+**Claude classifies content into the wrong pillar:** Check that `pillars.md` reflects the current 2-pillar strategy. If the file is correct, the command may have cached an old version — open a new session.
+
+**Gemini returns unstructured output:** Check that the research prompt in `career/articles/NNN-SLUG/1-research/prompts.md` explicitly specifies the expected section headings.
+
+**A carousel PDF fails to render:** The slide script is saved as a fallback at `career/articles/NNN-SLUG/4-linkedin/carousel-script.md`. Copy the content into Canva or Adobe Express to render manually.
+
+**Sanity CMS upload fails schema validation:** Check the assembled JSON against `website-schema.json`. Common causes: a missing field, wrong data type, or trailing comma. Remember to rename the file to `DATE_SLUG.json` before uploading.
+
+**`/draft-content` can't find the article:** Make sure you're passing a SLUG, not a topic phrase. Check that the slug appears in `INDEX.md`. The command accepts any case — `Monetask-18-Months-Never-Shipped` will resolve correctly.
